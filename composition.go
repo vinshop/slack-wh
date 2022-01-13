@@ -3,7 +3,7 @@ package slack_wh
 type TextType string
 
 const (
-	TextPlain    TextType = "plain_textor"
+	TextPlain    TextType = "plain_text"
 	TextMarkdown TextType = "mrkdwn"
 )
 

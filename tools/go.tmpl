@@ -1,0 +1,7 @@
+
+
+type {{.Name}} struct {
+    {{range $field := .Fields}}
+        {{$field.Name}} {{$field.Type}} `json:"{{$field.NameJSON}}{{if $field.Required}}{{else}},omitempty{{end}}"`
+    {{end}}
+}
