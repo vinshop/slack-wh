@@ -1,7 +1,33 @@
+package {{.Package}}
 
+{{range .Struct}}
+    //{{.Name}} {{.Doc}}
+    type {{.Name}} struct {
+        {{range $field := .Required}}{{$field.Name}} {{$field.Type}} `json:"{{$field.NameJSON}}"`
+        {{end}}
+        {{range $field := .Optional}}{{$field.Name}} {{$field.Type}} `json:"{{$field.NameJSON}},omitempty"`
+        {{end}}
+    }
 
-type {{.Name}} struct {
-    {{range $field := .Fields}}
-        {{$field.Name}} {{$field.Type}} `json:"{{$field.NameJSON}}{{if $field.Required}}{{else}},omitempty{{end}}"`
+    func New{{.Name}}(
+    {{range $f := .Required}}{{if $f.Const}}{{else}}{{$f.NameInput}} {{$f.Type}},{{end}}{{end}}
+    ) *{{.Name}} {
+        return &{{.Name}} {
+            {{range $f := .Required}}{{$f.Name}}: {{if $f.Const}}"{{$f.Const}}"{{else}}{{$f.NameInput}}{{end}},
+            {{end}}
+        }
+    }
+
+    {{ $name := .Name }}
+
+    {{range $f := .Optional}}
+    func (e *{{$name}}) With{{.Name}}({{$f.NameInput}} {{.Type}}) *{{$name}} {
+        e.{{.Name}} = {{.NameInput}}
+        return e
+    }
     {{end}}
-}
+
+    {{range $f := .Implement}}
+    func ({{$name}}) {{$f}}() {}
+    {{end}}
+{{end}}

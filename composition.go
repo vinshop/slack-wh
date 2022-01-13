@@ -9,19 +9,62 @@ const (
 
 //Text : https://api.slack.com/reference/block-kit/composition-objects#text
 type Text struct {
-	Type     TextType `json:"type"`
-	Text     string   `json:"text"`
-	Emoji    bool     `json:"emoji,omitempty"`
-	Verbatim bool     `json:"verbatim,omitempty"`
+	Type string `json:"type"`
+	Text string `json:"text"`
+
+	Emoji    bool `json:"emoji,omitempty"`
+	Verbatim bool `json:"verbatim,omitempty"`
+}
+
+func NewPlainText(text string) *Text {
+	return &Text{
+		Type: "plain_text",
+		Text: text,
+	}
+}
+
+func NewMarkdown(text string) *Text {
+	return &Text{
+		Type: "plain_text",
+		Text: text,
+	}
+}
+
+func (e *Text) WithEmoji(emoji bool) *Text {
+	e.Emoji = emoji
+	return e
+}
+
+func (e *Text) WithVerbatim(verbatim bool) *Text {
+	e.Verbatim = verbatim
+	return e
 }
 
 // Confirm Dialog : https://api.slack.com/reference/block-kit/composition-objects#confirm
+
 type Confirm struct {
-	Title   Text   `json:"title"`
-	Text    Text   `json:"text"`
-	Confirm Text   `json:"confirm"`
-	Deny    Text   `json:"deny"`
-	Style   string `json:"style,omitempty"`
+	Title   *Text `json:"title"`
+	Text    *Text `json:"text"`
+	Confirm *Text `json:"confirm"`
+	Deny    *Text `json:"deny"`
+
+	Style string `json:"style,omitempty"`
+}
+
+func NewConfirm(
+	title *Text, text *Text, confirm *Text, deny *Text,
+) *Confirm {
+	return &Confirm{
+		Title:   title,
+		Text:    text,
+		Confirm: confirm,
+		Deny:    deny,
+	}
+}
+
+func (e *Confirm) WithStyle(style string) *Confirm {
+	e.Style = style
+	return e
 }
 
 //Option : https://api.slack.com/reference/block-kit/composition-objects#option

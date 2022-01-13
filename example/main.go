@@ -8,16 +8,11 @@ import (
 
 func main() {
 	b := s.Section{
-		Type: "section",
-		Text: &s.Text{
-			Type:     "plain_text",
-			Text:     "A",
-			Emoji:    false,
-			Verbatim: false,
-		},
-		BlockID: "",
-		Fields:  nil,
-		Accessory: s.NewCheckBoxGroup("1", ),
+		Type:      "section",
+		Text:      s.NewPlainText("ABC"),
+		BlockID:   "",
+		Fields:    nil,
+		Accessory: s.NewCheckBoxGroup("1"),
 	}
 	data, _ := json.Marshal(b)
 
