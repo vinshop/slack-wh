@@ -25,6 +25,24 @@ func F(name string, t string) Field {
 		Type:      t,
 	}
 }
+
+func FS(s string) Field {
+	ss := strings.Split(s, ",")
+	f := F(ss[0], ss[1])
+	if len(ss) == 3 {
+		f = f.Default(ss[2])
+	}
+	return f
+}
+
+func FSS(ss ...string) []Field {
+	fs := make([]Field, 0, len(ss))
+	for _, s := range ss {
+		fs = append(fs, FS(s))
+	}
+	return fs
+}
+
 func (f Field) Default(s string) Field {
 	f.Const = s
 	return f
@@ -46,13 +64,9 @@ type File struct {
 //go:embed go.tmpl
 var tmpl string
 
-func main() {
-	t, err := template.New("go").Parse(tmpl)
-	if err != nil {
-		panic(err)
-	}
+func genComposition(t *template.Template) {
 	composition := File{
-		Package: "composite",
+		Package: "gen",
 		Struct: []Struct{
 			{
 				Doc:  "https://api.slack.com/reference/block-kit/composition-objects#text",
@@ -88,7 +102,7 @@ func main() {
 					F("Value", "string"),
 				},
 				Optional: []Field{
-					F("Description", "*Text"),
+					F("Description", "Text"),
 					F("URL", "string"),
 				},
 			},
@@ -127,8 +141,8 @@ func main() {
 			},
 		},
 	}
-	os.MkdirAll("tools/composition", fs.ModeDir)
-	f, err := os.Create("tools/composition/" + composition.Package + ".go")
+	os.MkdirAll("tools/gen", fs.ModeDir)
+	f, err := os.Create("tools/gen/composition.go")
 	if err != nil {
 		panic(err)
 	}
@@ -136,6 +150,160 @@ func main() {
 	if err := t.Execute(f, composition); err != nil {
 		panic(err)
 	}
+}
+
+func genBlockElement(t *template.Template) {
+	blockElements := File{
+		Package: "gen",
+		Struct: []Struct{
+			{
+				Doc:  "https://api.slack.com/reference/block-kit/block-elements#button",
+				Name: "Button",
+				Required: []Field{
+					F("Type", "string").Default("button"),
+					F("Text", "Text"),
+					F("ActionID", "string"),
+				},
+				Optional: []Field{
+					F("URL", "string"),
+					F("Value", "string"),
+					F("Style", "string"),
+					F("Confirm", "Confirm"),
+				},
+				Implement: []string{"inSection", "inActions", "inBlock"},
+			},
+			{
+				Doc:  "https://api.slack.com/reference/block-kit/block-elements#checkboxes",
+				Name: "Checkboxes",
+				Required: []Field{
+					F("Type", "string").Default("checkboxes"),
+					F("ActionID", "string"),
+					F("Options", "Option"),
+				},
+				Optional: []Field{
+					F("InitialOptions", "[]Option"),
+					F("Confirm", "Confirm"),
+					F("FocusOnLoad", "bool"),
+				},
+				Implement: []string{"inSection", "inActions", "inInput", "inBlock"},
+			},
+			{
+				Doc:  "https://api.slack.com/reference/block-kit/block-elements#datepicker",
+				Name: "DatePicker",
+				Implement: []string{
+					"inSection", "inActions", "inInput", "inBlock",
+				},
+				Required: []Field{
+					F("Type", "string").Default("datepicker"),
+					F("ActionID", "string"),
+				},
+				Optional: []Field{
+					F("Placeholder", "Text"),
+					F("InitialDate", "string"),
+					F("Confirm", "Confirm"),
+					F("FocusOnLoad", "bool"),
+				},
+			},
+			{
+				Doc:  "https://api.slack.com/reference/block-kit/block-elements#image",
+				Name: "Image",
+				Implement: []string{
+					"inBlock", "inSection", "inContext",
+				},
+				Required: []Field{
+					F("Type", "string").Default("image"),
+					F("ImageURL", "string"),
+					F("AltText", "string"),
+				},
+			},
+			{
+				Doc:  "https://api.slack.com/reference/block-kit/block-elements#overflow",
+				Name: "Overflow",
+				Implement: []string{
+					"inBlock", "inSection", "inActions",
+				},
+				Required: []Field{
+					F("Type", "string").Default("overflow"),
+					F("ActionID", "string"),
+					F("Options", "[]Option"),
+				},
+				Optional: []Field{
+					F("Confirm", "Confirm"),
+				},
+			},
+			{
+				Doc:  "https://api.slack.com/reference/block-kit/block-elements#input",
+				Name: "Input",
+				Implement: []string{
+					"inBlock", "inInput",
+				},
+				Required: []Field{
+					FS("Type,string,plain_text_input"),
+					FS("ActionID,string"),
+				},
+				Optional: []Field{
+					FS("Placeholder,Text"),
+					FS("InitialValue,string"),
+					FS("Multiline,bool"),
+					FS("MinLength,int"),
+					FS("MaxLength,int"),
+					FS("DispatchActionConfig,DispatchAction"),
+					FS("FocusOnLoad,bool"),
+				},
+			},
+			{
+				Doc:  "https://api.slack.com/reference/block-kit/block-elements#radio",
+				Name: "Radio",
+				Implement: []string{
+					"inBlock", "inSection", "inActions", "inInput",
+				},
+				Required: FSS(
+					"Type,string,radio_buttons",
+					"ActionID,string",
+					"Options,[]Option",
+				),
+				Optional: FSS(
+					"InitialOption,Option",
+					"Confirm,Confirm",
+					"FocusOnLoad,bool",
+				),
+			},
+			{
+				Doc:  "https://api.slack.com/reference/block-kit/block-elements#timepicker",
+				Name: "TimePicker",
+				Implement: []string{
+					"inBlock", "inSection", "inActions", "inInput",
+				},
+				Required: FSS(
+					"Type,string,timepicker",
+					"ActionID,string",
+				),
+				Optional: FSS(
+					"InitialTime,string",
+					"Confirm,Confirm",
+					"FocusOnLoad,bool",
+				),
+			},
+		},
+	}
+	os.MkdirAll("tools/gen", fs.ModeDir)
+	f, err := os.Create("tools/gen/block_elements.go")
+	if err != nil {
+		panic(err)
+	}
+
+	if err := t.Execute(f, blockElements); err != nil {
+		panic(err)
+	}
+}
+
+func main() {
+	t, err := template.New("go").Parse(tmpl)
+	if err != nil {
+		panic(err)
+	}
+	genComposition(t)
+	genBlockElement(t)
 
 }
 
