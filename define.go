@@ -1,6 +1,10 @@
-package gen
+package slack_wh
 
-type InBlock interface {
+type Block interface {
+	block()
+}
+
+type Element interface {
 	inBlock()
 }
 

@@ -3,7 +3,6 @@ package main
 import (
 	_ "embed"
 	"html/template"
-	"io/fs"
 	"os"
 	"regexp"
 	"strings"
@@ -66,13 +65,13 @@ var tmpl string
 
 func genComposition(t *template.Template) {
 	composition := File{
-		Package: "gen",
+		Package: "slack_wh",
 		Struct: []Struct{
 			{
 				Doc:  "https://api.slack.com/reference/block-kit/composition-objects#text",
 				Name: "Text",
 				Required: []Field{
-					F("Type", "string").Default("plaint_text"),
+					F("Type", "string").Default("plain_text"),
 					F("Text", "string"),
 				},
 				Optional: []Field{
@@ -141,8 +140,7 @@ func genComposition(t *template.Template) {
 			},
 		},
 	}
-	os.MkdirAll("tools/gen", fs.ModeDir)
-	f, err := os.Create("tools/gen/composition.go")
+	f, err := os.Create("composition.go")
 	if err != nil {
 		panic(err)
 	}
@@ -154,7 +152,7 @@ func genComposition(t *template.Template) {
 
 func genBlockElement(t *template.Template) {
 	blockElements := File{
-		Package: "gen",
+		Package: "slack_wh",
 		Struct: []Struct{
 			{
 				Doc:  "https://api.slack.com/reference/block-kit/block-elements#button",
@@ -286,8 +284,117 @@ func genBlockElement(t *template.Template) {
 			},
 		},
 	}
-	os.MkdirAll("tools/gen", fs.ModeDir)
-	f, err := os.Create("tools/gen/block_elements.go")
+	f, err := os.Create("block_elements.go")
+	if err != nil {
+		panic(err)
+	}
+
+	if err := t.Execute(f, blockElements); err != nil {
+		panic(err)
+	}
+}
+
+func genBlock(t *template.Template) {
+	blockElements := File{
+		Package: "slack_wh",
+		Struct: []Struct{
+			{
+				Doc:  "https://api.slack.com/reference/block-kit/blocks#actions",
+				Name: "Actions",
+				Implement: []string{
+					"block",
+				},
+				Required: FSS(
+					"Type,string,actions",
+					"Elements,[]InActions",
+				),
+				Optional: FSS(
+					"BlockID,string",
+				),
+			},
+			{
+				Doc:  "https://api.slack.com/reference/block-kit/blocks#context",
+				Name: "Context",
+				Implement: []string{
+					"block",
+				},
+				Required: FSS(
+					"Type,string,context",
+					"Elements,[]InContext",
+				),
+				Optional: FSS(
+					"BlockID,string",
+				),
+			},
+			{
+				Doc:      "https://api.slack.com/reference/block-kit/blocks#divider",
+				Name:     "Divider",
+				Required: FSS("Type,string,divier"),
+				Optional: FSS("BlockID,string"),
+			},
+			{
+				Doc:  "https://api.slack.com/reference/block-kit/blocks#file",
+				Name: "File",
+				Required: FSS(
+					"Type,string,file",
+					"ExternalID,string",
+					"Source,string",
+				),
+				Optional: FSS("BlockID,string"),
+			},
+			{
+				Doc:  "https://api.slack.com/reference/block-kit/blocks#header",
+				Name: "Header",
+				Required: FSS(
+					"Type,string,header",
+					"Text,Text",
+				),
+				Optional: FSS("BlockID,string"),
+			},
+			{
+				Doc:  "https://api.slack.com/reference/block-kit/blocks#image",
+				Name: "ImageBlock",
+				Required: FSS(
+					"Type,string,image",
+					"ImageURL,string",
+					"AltText,string",
+				),
+				Optional: FSS(
+					"Title,Text",
+					"BlockID,string",
+				),
+			},
+			{
+				Doc:  "https://api.slack.com/reference/block-kit/blocks#input",
+				Name: "InputBlock",
+				Required: FSS(
+					"Type,string,input",
+					"Label,Text",
+					"Element,InInput",
+				),
+				Optional: FSS(
+					"DispatchAction,bool",
+					"BlockID,string",
+					"Hint,Text",
+					"Optional,bool",
+				),
+			},
+			{
+				Doc:  "https://api.slack.com/reference/block-kit/blocks#section",
+				Name: "Section",
+				Required: FSS(
+					"Type,string,section",
+				),
+				Optional: FSS(
+					"Text,Text",
+					"BlockID,string",
+					"Fields,[]Text",
+					"Accessory,Element",
+				),
+			},
+		},
+	}
+	f, err := os.Create("block.go")
 	if err != nil {
 		panic(err)
 	}
@@ -304,6 +411,7 @@ func main() {
 	}
 	genComposition(t)
 	genBlockElement(t)
+	genBlock(t)
 
 }
 

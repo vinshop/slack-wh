@@ -46,7 +46,7 @@ func (Button) inSection() {}
 
 func (Button) inActions() {}
 
-func (Button) block() {}
+func (Button) inBlock() {}
 
 //Checkboxes https://api.slack.com/reference/block-kit/block-elements#checkboxes
 type Checkboxes struct {
@@ -90,7 +90,7 @@ func (Checkboxes) inActions() {}
 
 func (Checkboxes) inInput() {}
 
-func (Checkboxes) block() {}
+func (Checkboxes) inBlock() {}
 
 //DatePicker https://api.slack.com/reference/block-kit/block-elements#datepicker
 type DatePicker struct {
@@ -138,7 +138,7 @@ func (DatePicker) inActions() {}
 
 func (DatePicker) inInput() {}
 
-func (DatePicker) block() {}
+func (DatePicker) inBlock() {}
 
 //Image https://api.slack.com/reference/block-kit/block-elements#image
 type Image struct {
@@ -157,7 +157,7 @@ func NewImage(
 	}
 }
 
-func (Image) block() {}
+func (Image) inBlock() {}
 
 func (Image) inSection() {}
 
@@ -187,7 +187,7 @@ func (e Overflow) WithConfirm(confirm Confirm) Overflow {
 	return e
 }
 
-func (Overflow) block() {}
+func (Overflow) inBlock() {}
 
 func (Overflow) inSection() {}
 
@@ -251,7 +251,7 @@ func (e Input) WithFocusOnLoad(focusOnLoad bool) Input {
 	return e
 }
 
-func (Input) block() {}
+func (Input) inBlock() {}
 
 func (Input) inInput() {}
 
@@ -291,7 +291,7 @@ func (e Radio) WithFocusOnLoad(focusOnLoad bool) Radio {
 	return e
 }
 
-func (Radio) block() {}
+func (Radio) inBlock() {}
 
 func (Radio) inSection() {}
 
@@ -333,7 +333,7 @@ func (e TimePicker) WithFocusOnLoad(focusOnLoad bool) TimePicker {
 	return e
 }
 
-func (TimePicker) block() {}
+func (TimePicker) inBlock() {}
 
 func (TimePicker) inSection() {}
 
