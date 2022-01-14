@@ -5,7 +5,7 @@ type Block interface {
 }
 
 type Element interface {
-	inBlock()
+	element()
 }
 
 type InSection interface {

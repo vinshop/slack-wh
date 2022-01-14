@@ -1,19 +1,26 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	s "github.com/vinshop/slack-wh"
+	"os"
 )
 
 func main() {
 
-	b := s.NewActions(
-		s.NewButton(s.NewText("Choose"), "choosetrue").WithStyle("success"),
-		s.NewButton(s.NewText("Choose"), "choose").WithStyle("danger"),
-	)
+	wh := s.New(os.Getenv("WH_URL"))
 
-	data, _ := json.Marshal(b)
+	b := s.NewMessage().
+		WithBlocks(
+			s.NewHeader(s.NewText(s.TextPlain, "Budget Control")),
+			s.NewDivider(),
+			s.NewSection().WithText(s.NewText(s.TextPlain, "Statistic")).WithFields(
+				s.NewText(s.TextPlain, "Number of source budget: 100"),
+				s.NewText(s.TextPlain, "Number of campaign budget: 1000"),
+			),
+		)
 
-	fmt.Println(string(data))
+	if err := wh.SendMessage(b); err != nil {
+		panic(err)
+	}
+
 }

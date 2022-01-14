@@ -1,77 +1,50 @@
 package main
 
 import (
+	"bytes"
 	_ "embed"
+	"go/format"
 	"html/template"
 	"os"
 	"regexp"
 	"strings"
 )
 
-type Field struct {
-	Name      string
-	NameJSON  string
-	NameInput string
-	Type      string
-	Const     string
-}
-
-func F(name string, t string) Field {
-	return Field{
-		Name:      name,
-		NameJSON:  snake(name),
-		NameInput: lower(name),
-		Type:      t,
-	}
-}
-
-func FS(s string) Field {
-	ss := strings.Split(s, ",")
-	f := F(ss[0], ss[1])
-	if len(ss) == 3 {
-		f = f.Default(ss[2])
-	}
-	return f
-}
-
-func FSS(ss ...string) []Field {
-	fs := make([]Field, 0, len(ss))
-	for _, s := range ss {
-		fs = append(fs, FS(s))
-	}
-	return fs
-}
-
-func (f Field) Default(s string) Field {
-	f.Const = s
-	return f
-}
-
-type Struct struct {
-	Doc       string
-	Name      string
-	Required  []Field
-	Optional  []Field
-	Implement []string
-}
-
-type File struct {
-	Package string
-	Struct  []Struct
-}
-
 //go:embed go.tmpl
 var tmpl string
 
+func generate(t *template.Template, name string, data interface{}) {
+	f, err := os.Create(name + ".go")
+	if err != nil {
+		panic(err)
+	}
+	var buf bytes.Buffer
+	if err := t.Execute(&buf, data); err != nil {
+		panic(err)
+	}
+	p, err := format.Source(buf.Bytes())
+	if err != nil {
+		panic(err)
+	}
+	if _, err := f.Write(p); err != nil {
+		panic(err)
+	}
+}
+
 func genComposition(t *template.Template) {
-	composition := File{
+	compositions := File{
 		Package: "slack_wh",
+		Type: TT(
+			T("TextType,string", "TextPlain,plain_text", "TextMrkDwn,mrkdwn"),
+			T("Action,string", "EnterPressed,on_enter_pressed", "CharacterEntered,on_character_entered"),
+			T("ConversationType,string", "DirectMessage,im", "MultipartDirectMessage,mpim", "PrivateChannelMessage,private", "PublicChannelMessage,public"),
+		),
 		Struct: []Struct{
 			{
 				Doc:  "https://api.slack.com/reference/block-kit/composition-objects#text",
 				Name: "Text",
 				Required: []Field{
-					F("Type", "string").Default("plain_text"),
+					F("Type", "TextType"),
 					F("Text", "string"),
 				},
 				Optional: []Field{
@@ -123,7 +96,7 @@ func genComposition(t *template.Template) {
 
 				},
 				Optional: []Field{
-					F("TriggerActionsOn", "[]string"),
+					F("TriggerActionsOn", "[]Action"),
 				},
 			},
 			{
@@ -133,26 +106,22 @@ func genComposition(t *template.Template) {
 
 				},
 				Optional: []Field{
-					F("Include", "[]string"),
+					F("Include", "[]ConversationType"),
 					F("ExcludeExternalSharedChannels", "bool"),
 					F("ExcludeBotUsers", "bool"),
 				},
 			},
 		},
 	}
-	f, err := os.Create("composition.go")
-	if err != nil {
-		panic(err)
-	}
-
-	if err := t.Execute(f, composition); err != nil {
-		panic(err)
-	}
+	generate(t, "composition", compositions)
 }
 
 func genBlockElement(t *template.Template) {
 	blockElements := File{
 		Package: "slack_wh",
+		Type: TT(
+			T("Style,string", "Default,", "Primary,primary", "Danger,danger"),
+		),
 		Struct: []Struct{
 			{
 				Doc:  "https://api.slack.com/reference/block-kit/block-elements#button",
@@ -165,10 +134,10 @@ func genBlockElement(t *template.Template) {
 				Optional: []Field{
 					F("URL", "string"),
 					F("Value", "string"),
-					F("Style", "string"),
+					F("Style", "Style"),
 					F("Confirm", "Confirm"),
 				},
-				Implement: []string{"inSection", "inActions", "inBlock"},
+				Implement: []string{"inSection", "inActions", "element"},
 			},
 			{
 				Doc:  "https://api.slack.com/reference/block-kit/block-elements#checkboxes",
@@ -183,13 +152,13 @@ func genBlockElement(t *template.Template) {
 					F("Confirm", "Confirm"),
 					F("FocusOnLoad", "bool"),
 				},
-				Implement: []string{"inSection", "inActions", "inInput", "inBlock"},
+				Implement: []string{"inSection", "inActions", "inInput", "element"},
 			},
 			{
 				Doc:  "https://api.slack.com/reference/block-kit/block-elements#datepicker",
 				Name: "DatePicker",
 				Implement: []string{
-					"inSection", "inActions", "inInput", "inBlock",
+					"inSection", "inActions", "inInput", "element",
 				},
 				Required: []Field{
 					F("Type", "string").Default("datepicker"),
@@ -206,7 +175,7 @@ func genBlockElement(t *template.Template) {
 				Doc:  "https://api.slack.com/reference/block-kit/block-elements#image",
 				Name: "Image",
 				Implement: []string{
-					"inBlock", "inSection", "inContext",
+					"element", "inSection", "inContext",
 				},
 				Required: []Field{
 					F("Type", "string").Default("image"),
@@ -218,7 +187,7 @@ func genBlockElement(t *template.Template) {
 				Doc:  "https://api.slack.com/reference/block-kit/block-elements#overflow",
 				Name: "Overflow",
 				Implement: []string{
-					"inBlock", "inSection", "inActions",
+					"element", "inSection", "inActions",
 				},
 				Required: []Field{
 					F("Type", "string").Default("overflow"),
@@ -233,7 +202,7 @@ func genBlockElement(t *template.Template) {
 				Doc:  "https://api.slack.com/reference/block-kit/block-elements#input",
 				Name: "Input",
 				Implement: []string{
-					"inBlock", "inInput",
+					"element", "inInput",
 				},
 				Required: []Field{
 					FS("Type,string,plain_text_input"),
@@ -253,7 +222,7 @@ func genBlockElement(t *template.Template) {
 				Doc:  "https://api.slack.com/reference/block-kit/block-elements#radio",
 				Name: "Radio",
 				Implement: []string{
-					"inBlock", "inSection", "inActions", "inInput",
+					"element", "inSection", "inActions", "inInput",
 				},
 				Required: FSS(
 					"Type,string,radio_buttons",
@@ -270,7 +239,7 @@ func genBlockElement(t *template.Template) {
 				Doc:  "https://api.slack.com/reference/block-kit/block-elements#timepicker",
 				Name: "TimePicker",
 				Implement: []string{
-					"inBlock", "inSection", "inActions", "inInput",
+					"element", "inSection", "inActions", "inInput",
 				},
 				Required: FSS(
 					"Type,string,timepicker",
@@ -284,18 +253,11 @@ func genBlockElement(t *template.Template) {
 			},
 		},
 	}
-	f, err := os.Create("block_elements.go")
-	if err != nil {
-		panic(err)
-	}
-
-	if err := t.Execute(f, blockElements); err != nil {
-		panic(err)
-	}
+	generate(t, "element", blockElements)
 }
 
 func genBlock(t *template.Template) {
-	blockElements := File{
+	blocks := File{
 		Package: "slack_wh",
 		Struct: []Struct{
 			{
@@ -327,14 +289,20 @@ func genBlock(t *template.Template) {
 				),
 			},
 			{
-				Doc:      "https://api.slack.com/reference/block-kit/blocks#divider",
-				Name:     "Divider",
-				Required: FSS("Type,string,divier"),
+				Doc:  "https://api.slack.com/reference/block-kit/blocks#divider",
+				Name: "Divider",
+				Implement: []string{
+					"block",
+				},
+				Required: FSS("Type,string,divider"),
 				Optional: FSS("BlockID,string"),
 			},
 			{
 				Doc:  "https://api.slack.com/reference/block-kit/blocks#file",
 				Name: "File",
+				Implement: []string{
+					"block",
+				},
 				Required: FSS(
 					"Type,string,file",
 					"ExternalID,string",
@@ -345,6 +313,9 @@ func genBlock(t *template.Template) {
 			{
 				Doc:  "https://api.slack.com/reference/block-kit/blocks#header",
 				Name: "Header",
+				Implement: []string{
+					"block",
+				},
 				Required: FSS(
 					"Type,string,header",
 					"Text,Text",
@@ -354,6 +325,9 @@ func genBlock(t *template.Template) {
 			{
 				Doc:  "https://api.slack.com/reference/block-kit/blocks#image",
 				Name: "ImageBlock",
+				Implement: []string{
+					"block",
+				},
 				Required: FSS(
 					"Type,string,image",
 					"ImageURL,string",
@@ -367,6 +341,9 @@ func genBlock(t *template.Template) {
 			{
 				Doc:  "https://api.slack.com/reference/block-kit/blocks#input",
 				Name: "InputBlock",
+				Implement: []string{
+					"block",
+				},
 				Required: FSS(
 					"Type,string,input",
 					"Label,Text",
@@ -382,6 +359,9 @@ func genBlock(t *template.Template) {
 			{
 				Doc:  "https://api.slack.com/reference/block-kit/blocks#section",
 				Name: "Section",
+				Implement: []string{
+					"block",
+				},
 				Required: FSS(
 					"Type,string,section",
 				),
@@ -394,14 +374,26 @@ func genBlock(t *template.Template) {
 			},
 		},
 	}
-	f, err := os.Create("block.go")
-	if err != nil {
-		panic(err)
-	}
+	generate(t, "block", blocks)
+}
 
-	if err := t.Execute(f, blockElements); err != nil {
-		panic(err)
+func genMessage(t *template.Template) {
+	message := File{
+		Package: "slack_wh",
+		Struct: []Struct{
+			{
+				Doc:  "https://api.slack.com/reference/messaging/payload",
+				Name: "Message",
+				Optional: FSS(
+					"Text,string",
+					"Blocks,[]Block",
+					"ThreadTS,string",
+					"Mrkdwn,bool",
+				),
+			},
+		},
 	}
+	generate(t, "message", message)
 }
 
 func main() {
@@ -412,6 +404,7 @@ func main() {
 	genComposition(t)
 	genBlockElement(t)
 	genBlock(t)
+	genMessage(t)
 
 }
 

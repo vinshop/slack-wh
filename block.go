@@ -33,7 +33,7 @@ type Context struct {
 }
 
 func NewContext(
-	elements []InContext,
+	elements ...InContext,
 ) Context {
 	return Context{
 		Type:     "context",
@@ -57,7 +57,7 @@ type Divider struct {
 
 func NewDivider() Divider {
 	return Divider{
-		Type: "divier",
+		Type: "divider",
 	}
 }
 
@@ -65,6 +65,8 @@ func (e Divider) WithBlockID(blockID string) Divider {
 	e.BlockID = &blockID
 	return e
 }
+
+func (Divider) block() {}
 
 //File https://api.slack.com/reference/block-kit/blocks#file
 type File struct {
@@ -90,6 +92,8 @@ func (e File) WithBlockID(blockID string) File {
 	return e
 }
 
+func (File) block() {}
+
 //Header https://api.slack.com/reference/block-kit/blocks#header
 type Header struct {
 	Type string `json:"type"`
@@ -111,6 +115,8 @@ func (e Header) WithBlockID(blockID string) Header {
 	e.BlockID = &blockID
 	return e
 }
+
+func (Header) block() {}
 
 //ImageBlock https://api.slack.com/reference/block-kit/blocks#image
 type ImageBlock struct {
@@ -141,6 +147,8 @@ func (e ImageBlock) WithBlockID(blockID string) ImageBlock {
 	e.BlockID = &blockID
 	return e
 }
+
+func (ImageBlock) block() {}
 
 //InputBlock https://api.slack.com/reference/block-kit/blocks#input
 type InputBlock struct {
@@ -184,13 +192,15 @@ func (e InputBlock) WithOptional(optional bool) InputBlock {
 	return e
 }
 
+func (InputBlock) block() {}
+
 //Section https://api.slack.com/reference/block-kit/blocks#section
 type Section struct {
 	Type string `json:"type"`
 
 	Text      *Text    `json:"text,omitempty"`
 	BlockID   *string  `json:"block_id,omitempty"`
-	Fields    *[]Text  `json:"fields,omitempty"`
+	Fields    []Text   `json:"fields,omitempty"`
 	Accessory *Element `json:"accessory,omitempty"`
 }
 
@@ -210,8 +220,8 @@ func (e Section) WithBlockID(blockID string) Section {
 	return e
 }
 
-func (e Section) WithFields(fields []Text) Section {
-	e.Fields = &fields
+func (e Section) WithFields(fields ...Text) Section {
+	e.Fields = fields
 	return e
 }
 
@@ -219,3 +229,5 @@ func (e Section) WithAccessory(accessory Element) Section {
 	e.Accessory = &accessory
 	return e
 }
+
+func (Section) block() {}

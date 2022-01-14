@@ -1,5 +1,13 @@
 package slack_wh
 
+type Style string
+
+const (
+	Default Style = ""
+	Primary Style = "primary"
+	Danger  Style = "danger"
+)
+
 //Button https://api.slack.com/reference/block-kit/block-elements#button
 type Button struct {
 	Type     string `json:"type"`
@@ -8,7 +16,7 @@ type Button struct {
 
 	URL     *string  `json:"url,omitempty"`
 	Value   *string  `json:"value,omitempty"`
-	Style   *string  `json:"style,omitempty"`
+	Style   *Style   `json:"style,omitempty"`
 	Confirm *Confirm `json:"confirm,omitempty"`
 }
 
@@ -32,7 +40,7 @@ func (e Button) WithValue(value string) Button {
 	return e
 }
 
-func (e Button) WithStyle(style string) Button {
+func (e Button) WithStyle(style Style) Button {
 	e.Style = &style
 	return e
 }
@@ -46,7 +54,7 @@ func (Button) inSection() {}
 
 func (Button) inActions() {}
 
-func (Button) inBlock() {}
+func (Button) element() {}
 
 //Checkboxes https://api.slack.com/reference/block-kit/block-elements#checkboxes
 type Checkboxes struct {
@@ -54,9 +62,9 @@ type Checkboxes struct {
 	ActionID string `json:"action_id"`
 	Options  Option `json:"options"`
 
-	InitialOptions *[]Option `json:"initial_options,omitempty"`
-	Confirm        *Confirm  `json:"confirm,omitempty"`
-	FocusOnLoad    *bool     `json:"focus_on_load,omitempty"`
+	InitialOptions []Option `json:"initial_options,omitempty"`
+	Confirm        *Confirm `json:"confirm,omitempty"`
+	FocusOnLoad    *bool    `json:"focus_on_load,omitempty"`
 }
 
 func NewCheckboxes(
@@ -69,8 +77,8 @@ func NewCheckboxes(
 	}
 }
 
-func (e Checkboxes) WithInitialOptions(initialOptions []Option) Checkboxes {
-	e.InitialOptions = &initialOptions
+func (e Checkboxes) WithInitialOptions(initialOptions ...Option) Checkboxes {
+	e.InitialOptions = initialOptions
 	return e
 }
 
@@ -90,7 +98,7 @@ func (Checkboxes) inActions() {}
 
 func (Checkboxes) inInput() {}
 
-func (Checkboxes) inBlock() {}
+func (Checkboxes) element() {}
 
 //DatePicker https://api.slack.com/reference/block-kit/block-elements#datepicker
 type DatePicker struct {
@@ -138,7 +146,7 @@ func (DatePicker) inActions() {}
 
 func (DatePicker) inInput() {}
 
-func (DatePicker) inBlock() {}
+func (DatePicker) element() {}
 
 //Image https://api.slack.com/reference/block-kit/block-elements#image
 type Image struct {
@@ -157,7 +165,7 @@ func NewImage(
 	}
 }
 
-func (Image) inBlock() {}
+func (Image) element() {}
 
 func (Image) inSection() {}
 
@@ -173,7 +181,7 @@ type Overflow struct {
 }
 
 func NewOverflow(
-	actionID string, options []Option,
+	actionID string, options ...Option,
 ) Overflow {
 	return Overflow{
 		Type:     "overflow",
@@ -187,7 +195,7 @@ func (e Overflow) WithConfirm(confirm Confirm) Overflow {
 	return e
 }
 
-func (Overflow) inBlock() {}
+func (Overflow) element() {}
 
 func (Overflow) inSection() {}
 
@@ -251,7 +259,7 @@ func (e Input) WithFocusOnLoad(focusOnLoad bool) Input {
 	return e
 }
 
-func (Input) inBlock() {}
+func (Input) element() {}
 
 func (Input) inInput() {}
 
@@ -267,7 +275,7 @@ type Radio struct {
 }
 
 func NewRadio(
-	actionID string, options []Option,
+	actionID string, options ...Option,
 ) Radio {
 	return Radio{
 		Type:     "radio_buttons",
@@ -291,7 +299,7 @@ func (e Radio) WithFocusOnLoad(focusOnLoad bool) Radio {
 	return e
 }
 
-func (Radio) inBlock() {}
+func (Radio) element() {}
 
 func (Radio) inSection() {}
 
@@ -333,7 +341,7 @@ func (e TimePicker) WithFocusOnLoad(focusOnLoad bool) TimePicker {
 	return e
 }
 
-func (TimePicker) inBlock() {}
+func (TimePicker) element() {}
 
 func (TimePicker) inSection() {}
 
