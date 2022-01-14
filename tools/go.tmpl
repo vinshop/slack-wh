@@ -1,0 +1,47 @@
+package {{.Package}}
+
+
+{{range .Type}}
+type {{.Name}} {{.Type}}
+{{$typeName := .Name}}
+{{if .Const}}
+const (
+{{range .Const}}{{.Name}} {{$typeName}} = "{{.Value}}"
+{{end}}
+)
+{{end}}
+
+{{end}}
+
+
+{{range .Struct}}
+    //{{.Name}} {{.Doc}}
+    type {{.Name}} struct {
+        {{range $field := .Required}}{{$field.Name}} {{if .IsArray}}[]{{end}}{{$field.Type}} `json:"{{$field.NameJSON}}"`
+        {{end}}
+        {{range $field := .Optional}}{{$field.Name}}{{if .IsArray}}[]{{else}}*{{end}}{{$field.Type}} `json:"{{$field.NameJSON}},omitempty"`
+        {{end}}
+    }
+
+    func New{{.Name}}(
+    {{range $f := .Required}}{{if $f.Const}}{{else}}{{$f.NameInput}} {{if .IsArray}}...{{end}}{{$f.Type}},{{end}}{{end}}
+    ) {{.Name}} {
+        return {{.Name}} {
+            {{range $f := .Required}}{{$f.Name}}: {{if $f.Const}}"{{$f.Const}}"{{else}}{{$f.NameInput}}{{end}},
+            {{end}}
+        }
+    }
+
+    {{ $name := .Name }}
+
+    {{range $f := .Optional}}
+    func (e {{$name}}) With{{.Name}}({{$f.NameInput}} {{if .IsArray}}...{{end}}{{.Type}}) {{$name}} {
+        e.{{.Name}} = {{if .IsArray}}{{else}}&{{end}}{{.NameInput}}
+        return e
+    }
+    {{end}}
+
+    {{range $f := .Implement}}
+    func ({{$name}}) {{$f}}() {}
+    {{end}}
+{{end}}
